@@ -1,0 +1,43 @@
+name: lupdate-zh
+
+# One-off helper: extract all translatable UI strings into a Qt .ts file so the
+# zh_CN translation can be filled in. Run manually via workflow_dispatch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    name: extract strings
+    runs-on: windows-2022
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Qt on Windows
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtcharts
+          cache: true
+
+      - name: Run lupdate
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path src/yuzu/translations | Out-Null
+          lupdate src/yuzu src/qt_common -ts src/yuzu/translations/zh_CN.ts
+
+      - name: Upload ts
+        uses: actions/upload-artifact@v7
+        with:
+          name: zh_CN-lupdate
+          path: src/yuzu/translations/zh_CN.ts
+          if-no-files-found: error
+          retention-days: 7
